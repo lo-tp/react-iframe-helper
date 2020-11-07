@@ -12,7 +12,7 @@ export type setter = (data:any) => void
 export const useIFrameParent = (
   delay: number,
   childDomain: string,
-  listen: listener
+  listen?: listener 
 ) => {
   const ref = useRef<HTMLIFrameElement>(null)
   const [status, setStatus] = useState(IFrameStatus.INITIALIZED)
@@ -22,13 +22,13 @@ export const useIFrameParent = (
     (event) => {
       const { origin, data } = event
       if(origin===childDomain && data.child ){
-        if(status===IFrameStatus.LOADED){
-          listen(data.data)
-        }
-        else{
+        if(status!==IFrameStatus.LOADED){
           clearTimeout(timerId)
           setStatus(IFrameStatus.LOADED)
           window.removeEventListener('message', messageListener)
+        }
+        else if(listen){
+          listen(data.data)
         }
       }
     },
@@ -64,7 +64,7 @@ export const useIFrameParent = (
 
 export const useIFrameChild = (
   parentDomain: string,
-  listen: listener
+  listen?: listener 
 ) => {
   const [initialized, setInitialized]=useState(false)
 
@@ -74,7 +74,7 @@ export const useIFrameChild = (
           if(!initialized) {
               setInitialized(true)
               window.parent.postMessage({child:true},parentDomain);
-          } else {
+          } else if(listen) {
             listen(data.data)
           }
       }
