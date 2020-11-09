@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from "react"
 
 export  enum IFrameStatus {
-  INITIALIZED,
+  LOADING,
   LOADED,
   FAILED,
 }
@@ -15,7 +15,7 @@ export const useIFrameParent = (
   listen?: listener 
 ) => {
   const ref = useRef<HTMLIFrameElement>(null)
-  const [status, setStatus] = useState(IFrameStatus.INITIALIZED)
+  const [status, setStatus] = useState(IFrameStatus.LOADING)
   const [timerId, setTimerId] = useState(0)
 
   const messageListener = useCallback(
