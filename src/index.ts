@@ -22,7 +22,7 @@ export const useIFrameParent = (
     (event) => {
       const { origin, data } = event
       if(origin===childDomain && data.child ){
-        if(status!==IFrameStatus.LOADED){
+        if(data['__init__']){
           clearTimeout(timerId)
           setStatus(IFrameStatus.LOADED)
           window.removeEventListener('message', messageListener)
@@ -45,7 +45,7 @@ export const useIFrameParent = (
   }, [messageListener, timerId])
 
   const onLoad = () => {
-    ref?.current?.contentWindow?.postMessage({ parent: true, hello: 123 }, childDomain)
+    ref?.current?.contentWindow?.postMessage({ parent: true, '__init__': '__init__' }, childDomain)
     setTimerId(
       window.setTimeout(() => {
         setStatus(IFrameStatus.FAILED)
@@ -71,9 +71,9 @@ export const useIFrameChild = (
   const messageListener=useCallback((event:MessageEvent) => {
       const {origin,data}=event;
       if (origin===parentDomain && data.parent){
-          if(!initialized) {
+          if(data['__init__']) {
               setInitialized(true)
-              window.parent.postMessage({child:true},parentDomain);
+              window.parent.postMessage({'__init__':'__init__',child:true},parentDomain);
           } else if(listen) {
             listen(data.data)
           }
