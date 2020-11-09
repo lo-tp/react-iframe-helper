@@ -9,21 +9,28 @@ export  enum IFrameStatus {
 export type listener = (data:any) => void
 export type setter = (data:any) => void
 
-export const useIFrameParent = (
+export const useIFrameParent = ({
+  delay,
+  childDomain,
+  listen,
+  count: initialCount
+}:{
   delay: number,
   childDomain: string,
   listen?: listener 
-) => {
+  count?: number 
+}) => {
   const ref = useRef<HTMLIFrameElement>(null)
   const [status, setStatus] = useState(IFrameStatus.LOADING)
-  const [timerId, setTimerId] = useState(0)
+  const timerId=useRef(0)
+  const count=useRef(initialCount||3)
 
   const messageListener = useCallback(
     (event) => {
       const { origin, data } = event
       if(origin===childDomain && data.child ){
         if(data['__init__']){
-          clearTimeout(timerId)
+          clearInterval(timerId.current)
           setStatus(IFrameStatus.LOADED)
           window.removeEventListener('message', messageListener)
         }
@@ -45,13 +52,16 @@ export const useIFrameParent = (
   }, [messageListener, timerId])
 
   const onLoad = () => {
-    ref?.current?.contentWindow?.postMessage({ parent: true, '__init__': '__init__' }, childDomain)
-    setTimerId(
-      window.setTimeout(() => {
-        setStatus(IFrameStatus.FAILED)
-        window.removeEventListener('message', messageListener)
+      timerId.current=window.setInterval(() => {
+        if (count.current===0){
+          setStatus(IFrameStatus.FAILED)
+          window.removeEventListener('message', messageListener)
+          clearInterval(timerId.current)
+        } else {
+          ref?.current?.contentWindow?.postMessage({ parent: true, '__init__': '__init__' }, childDomain)
+          count.current=count.current-1
+        }
       }, delay)
-    )
   }
 
   return {
