@@ -25,7 +25,7 @@ const { ref, status, onLoad, send } = useIFrameParent({
                                         childDomain:'http://localhost:3006', //required
                                         listen: listenerCallback,  //optional
                                         count:10  //deafult to 10
-                                        )
+                                        })
 ```
 The `count` arg is about how many times we will try the status query and the `delay` arg is the interval in which we will send the query. For example, With the above shown code the status would be marked as failed when we wait for 500ms without receiving the reply.
 
@@ -46,6 +46,6 @@ Having the `useIFrameParent` invoked, the remaining work is just set the `ref` a
 Now in the parent app, we can check if status is equal to `IFrameStatus.LOADING`, `IFrameStatus.LOADED` or `IFRameStatus.FAILED` to see the status of the inner app and and send messages to the inner app with `send` returned from the `IFrameParent` hook.
 
 ### To  use This Lib At the inner App 
-Similiar to how we use the `useIFrameParent` hook, we send the parent domain and a listener to it: `const { send } = useIFrameChild({parentDomain: 'http://localhost:3000', listen })`.
+Similiar to how we use the `useIFrameParent` hook, we send the parent domain and a listener: `const { send } = useIFrameChild({parentDomain: 'http://localhost:3000', listen })`.
 
 Then messages from the parent app can be retrieved through the **listen** we send in and to send messages to parent app, just use the `send` method returned.
