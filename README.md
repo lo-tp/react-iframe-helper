@@ -15,7 +15,6 @@ Once it replies then we know is's working.
 If we wait for a certain amount of time without receiving the reply we see it as a loading failure.
 
 # Quick Start
----
 Installation is fairly easy: `npm install react-iframe-helper`.
 
 ### To  use This Lib At the parent App 
