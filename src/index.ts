@@ -10,12 +10,12 @@ export type Listener = (data: any) => void;
 export type Setter = (data: any) => void;
 
 export const useIFrameParent = ({
-  delay,
+  delay = 500,
   childDomain,
   listen,
-  count: initialCount,
+  count: initialCount = 10,
 }: {
-  delay: number;
+  delay?: number;
   childDomain: string;
   listen?: Listener;
   count?: number;
@@ -28,7 +28,7 @@ export const useIFrameParent = ({
   const ref = useRef<HTMLIFrameElement>(null);
   const [status, setStatus] = useState(IFrameStatus.LOADING);
   const timerId = useRef(0);
-  const count = useRef(initialCount || 3);
+  const count = useRef(initialCount);
 
   const messageListener = useCallback(
     (event) => {
@@ -53,7 +53,7 @@ export const useIFrameParent = ({
   }, [messageListener]);
 
   const onLoad = () => {
-    count.current = initialCount || 3;
+    count.current = initialCount;
     timerId.current = window.setInterval(() => {
       if (count.current === 0) {
         setStatus(IFrameStatus.FAILED);
