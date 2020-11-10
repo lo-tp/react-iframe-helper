@@ -6,6 +6,14 @@ Besides these two main features efforts have also been made to guaranteed securi
 
 Another thing worth mentioning for folks using typescript is that the whole lib is written in ts so types will never be a concern.
 
+# What's Under the hood
+
+The idea is very simple. To tell if the app inside the iframe is running properly, just send a query mesage to query the status.
+
+Once it replies then we know is's working.
+
+If we wait for a certain amount of time without receiving the reply we see it as a loading failure.
+
 # Quick Start
 ---
 Installation is fairly easy: `npm install react-iframe-helper`.
@@ -13,13 +21,18 @@ Installation is fairly easy: `npm install react-iframe-helper`.
 ### To  use This Lib At the parent App 
 we will invoke the hook firstly.
 ```js
-const { ref, status, onLoad, send } = useIFrameParent(50,'http://localhost:3006',listener)
+const { ref, status, onLoad, send } = useIFrameParent({
+                                        delay: 50 //default to 500,
+                                        childDomain:'http://localhost:3006', //required
+                                        listen: listenerCallback,  //optional
+                                        count:10  //deafult to 10
+                                        )
 ```
-The first arg is the delay after which the loading status of the `iframe` would be marked as failed were there no reply from the inner app.
+The `count` arg is about how many times we will try the status query and the `delay` arg is the interval in which we will send the query. For example, With the above shown code the status would be marked as failed when we wait for 500ms without receiving the reply.
 
-The second arg is the domain of the inner app for security check.
+Apart from that the `childDomain` arg is the domain of the inner app for security check.
 
-Lastly a third arg which is optional is used as a callback to handle the message from the inner app.
+Lastly the `listen` arg is used as a callback to handle the message from the inner app.
 
 Having the `useIFrameParent` invoked, the remaining work is just set the `ref` and `onLoad`(returned from the `useIFrameParent` hook) properly for the iframe component.
 ```js
