@@ -46,6 +46,6 @@ Having the `useIFrameParent` invoked, the remaining work is just set the `ref` a
 Now in the parent app, we can check if status is equal to `IFrameStatus.LOADING`, `IFrameStatus.LOADED` or `IFRameStatus.FAILED` to see the status of the inner app and and send messages to the inner app with `send` returned from the `IFrameParent` hook.
 
 ### To  use This Lib At the inner App 
-Similiar to how we use the `useIFrameParent` hook, we send the parent domain and a listener to it: `const { send } = useIFrameChild('http://localhost:3000', listener)`.
+Similiar to how we use the `useIFrameParent` hook, we send the parent domain and a listener to it: `const { send } = useIFrameChild({parentDomain: 'http://localhost:3000', listen })`.
 
-Then messages from the parent app can be retrieved through the **listener** we send in and to send messages to parent app, just use the `send` method returned.
+Then messages from the parent app can be retrieved through the **listen** we send in and to send messages to parent app, just use the `send` method returned.

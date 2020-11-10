@@ -80,10 +80,13 @@ export const useIFrameParent = ({
   };
 };
 
-export const useIFrameChild = (
-  parentDomain: string,
-  listen?: Listener
-): { send: (data: any) => void } => {
+export const useIFrameChild = ({
+  parentDomain,
+  listen,
+}: {
+  parentDomain: string;
+  listen?: Listener;
+}): { send: (data: any) => void } => {
   const messageListener = useCallback(
     (event: MessageEvent) => {
       const { origin, data } = event;
