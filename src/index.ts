@@ -7,7 +7,6 @@ export enum IFrameStatus {
 }
 
 export type Listener = (data: any) => void;
-export type Setter = (data: any) => void;
 
 export const useIFrameParent = ({
   delay = 500,
@@ -80,15 +79,21 @@ export const useIFrameParent = ({
   };
 };
 
+export interface ChildProp {
+  parentDomain: string;
+  listen?: Listener;
+}
+
+export interface ChildResult {
+  send: (data: any) => void;
+}
+
 export const useIFrameChild = ({
   parentDomain,
   listen,
-}: {
-  parentDomain: string;
-  listen?: Listener;
-}): { send: (data: any) => void } => {
+}: ChildProp): ChildResult => {
   const messageListener = useCallback(
-    (event: MessageEvent) => {
+    (event) => {
       const { origin, data } = event;
       if (origin === parentDomain && data.parent) {
         if (data.__init__) {

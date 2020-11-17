@@ -4,23 +4,15 @@ import {
   RenderHookResult,
 } from "@testing-library/react-hooks";
 import * as reactExport from "react";
-import { Listener, useIFrameChild } from "..";
-
-// test("should invoke the listen callback properly when receiving a non-init message", () => {
+import { ChildProp, ChildResult, useIFrameChild } from "..";
 
 describe("useIFrameChild shold work properly", () => {
   const listen = jest.fn();
   const parentDomain = "http://www.parentDomain.com";
-  let messageListener: (event: MessageEvent) => void;
+  let messageListener: EventListener;
   let mockedPostMessage: jest.Mock;
   let removeEventListener: jest.Mock;
-  let hook: RenderHookResult<
-    {
-      parentDomain: string;
-      listen?: Listener;
-    },
-    { send: (data: any) => void }
-  >;
+  let hook: RenderHookResult<ChildProp, ChildResult>;
   let cleanUp: void | (() => void | undefined);
 
   beforeAll(() => {
