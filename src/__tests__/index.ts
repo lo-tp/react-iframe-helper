@@ -3,7 +3,6 @@ import {
   renderHook,
   RenderHookResult,
 } from "@testing-library/react-hooks";
-import * as reactExport from "react";
 import { ChildProp, ChildResult, useIFrameChild } from "..";
 
 describe("useIFrameChild shold work properly", () => {
@@ -13,12 +12,8 @@ describe("useIFrameChild shold work properly", () => {
   let mockedPostMessage: jest.Mock;
   let removeEventListener: jest.Mock;
   let hook: RenderHookResult<ChildProp, ChildResult>;
-  let cleanUp: void | (() => void | undefined);
 
   beforeAll(() => {
-    jest.spyOn(reactExport, "useEffect").mockImplementation((func) => {
-      cleanUp = func();
-    });
     global.addEventListener = jest.fn();
     global.removeEventListener = jest.fn();
     global.parent.postMessage = jest.fn();
@@ -111,8 +106,9 @@ describe("useIFrameChild shold work properly", () => {
     expect(
       removeEventListener.mock.calls.filter(([type]) => type === "message")
     ).toEqual([]);
-    // @ts-ignore 2349
-    cleanUp();
+    act(() => {
+      hook.unmount();
+    });
     expect(
       removeEventListener.mock.calls.filter(([type]) => type === "message")
     ).toEqual([["message", messageListener]]);
