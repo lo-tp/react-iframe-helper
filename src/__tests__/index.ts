@@ -3,6 +3,7 @@ import {
   renderHook,
   RenderHookResult,
 } from "@testing-library/react-hooks";
+import * as reactExport from "react";
 import { Listener, useIFrameChild } from "..";
 
 // test("should invoke the listen callback properly when receiving a non-init message", () => {
@@ -12,6 +13,7 @@ describe("useIFrameChild shold work properly", () => {
   const parentDomain = "http://www.parentDomain.com";
   let messageListener: (event: MessageEvent) => void;
   let mockedPostMessage: jest.Mock;
+  let removeEventListener: jest.Mock;
   let hook: RenderHookResult<
     {
       parentDomain: string;
@@ -19,9 +21,14 @@ describe("useIFrameChild shold work properly", () => {
     },
     { send: (data: any) => void }
   >;
+  let cleanUp: void | (() => void | undefined);
 
   beforeAll(() => {
+    jest.spyOn(reactExport, "useEffect").mockImplementation((func) => {
+      cleanUp = func();
+    });
     global.addEventListener = jest.fn();
+    global.removeEventListener = jest.fn();
     global.parent.postMessage = jest.fn();
     hook = renderHook(() =>
       useIFrameChild({
@@ -30,6 +37,7 @@ describe("useIFrameChild shold work properly", () => {
       })
     );
     const mockedAddEventListener = global.addEventListener as jest.Mock;
+    removeEventListener = global.removeEventListener as jest.Mock;
     mockedPostMessage = global.parent.postMessage as jest.Mock;
     [[, messageListener]] = mockedAddEventListener.mock.calls.filter(
       (call) => call[0] === "message"
@@ -98,11 +106,23 @@ describe("useIFrameChild shold work properly", () => {
     expect(mockedPostMessage.mock.calls).toEqual([]);
     expect(listen.mock.calls).toEqual([]);
   });
+
   test("should send message to parent properly", () => {
     const data = "data string";
     hook.result.current.send(data);
     expect(mockedPostMessage.mock.calls).toEqual([
       [{ child: true, data }, parentDomain],
     ]);
+  });
+
+  test("should unregister event listener properly", () => {
+    expect(
+      removeEventListener.mock.calls.filter(([type]) => type === "message")
+    ).toEqual([]);
+    // @ts-ignore 2349
+    cleanUp();
+    expect(
+      removeEventListener.mock.calls.filter(([type]) => type === "message")
+    ).toEqual([["message", messageListener]]);
   });
 });
