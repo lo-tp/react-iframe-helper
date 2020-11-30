@@ -1,5 +1,8 @@
 import { Ref, useCallback, useEffect, useRef, useState } from "react";
 
+export const DEFAULT_DELAY = 500;
+export const DEFAULT_COUNT = 10;
+
 export enum IFrameStatus {
   LOADING,
   LOADED,
@@ -23,10 +26,10 @@ export interface ParentResult {
 }
 
 export const useIFrameParent = ({
-  delay = 500,
+  delay = DEFAULT_DELAY,
   childDomain,
   listen,
-  count: initialCount = 10,
+  count: initialCount = DEFAULT_COUNT,
 }: ParentProp): ParentResult => {
   const ref = useRef<HTMLIFrameElement>(null);
   const [status, setStatus] = useState(IFrameStatus.LOADING);
