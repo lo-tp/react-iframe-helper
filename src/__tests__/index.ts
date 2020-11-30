@@ -16,6 +16,8 @@ import {
   useIFrameParent,
 } from "..";
 
+const { useRef: realUseRef } = React;
+
 describe("useIFrameChild shold work properly", () => {
   const listen = jest.fn();
   const parentDomain = "http://www.parentDomain.com";
@@ -138,7 +140,6 @@ describe("useIframeParent should mark status as FAILED when fail to hand shake w
     global.clearInterval = jest.fn();
     global.setInterval = jest.fn().mockReturnValue(5);
     global.parent.postMessage = jest.fn();
-    const { useRef: realUseRef } = React;
     // eslint-disable-next-line
     // @ts-ignore
     jest.spyOn(React, "useRef").mockImplementation((initialVal) =>
@@ -193,6 +194,78 @@ describe("useIframeParent should mark status as FAILED when fail to hand shake w
     });
     expect(mockedPostMessage.mock.calls).toEqual([]);
     expect(hook.result.current.status).toBe(IFrameStatus.FAILED);
+    expect(clearIntervalListener.mock.calls).toEqual([[5]]);
+  });
+});
+
+describe("useIframeParent should mark status as LOADED when succeed to hand shake with the child for count times", () => {
+  const listen = jest.fn();
+  const childDomain = "http://www.childDomain.com";
+  const mockedPostMessage = jest.fn();
+  let setIntervalListener: jest.Mock;
+  let clearIntervalListener: jest.Mock;
+  let hook: RenderHookResult<ParentProp, ParentResult>;
+  let messageListener: EventListener;
+  beforeAll(() => {
+    global.clearInterval = jest.fn();
+    global.setInterval = jest.fn().mockReturnValue(5);
+    global.addEventListener = jest.fn();
+    global.parent.postMessage = jest.fn();
+    // eslint-disable-next-line
+    // @ts-ignore
+    jest.spyOn(React, "useRef").mockImplementation((initialVal) =>
+      initialVal === null
+        ? {
+            current: { contentWindow: { postMessage: mockedPostMessage } },
+          }
+        : realUseRef("react")
+    );
+    const mockedAddEventListener = global.addEventListener as jest.Mock;
+    setIntervalListener = global.setInterval as jest.Mock;
+    clearIntervalListener = global.clearInterval as jest.Mock;
+    hook = renderHook(() =>
+      useIFrameParent({
+        listen,
+        childDomain,
+      })
+    );
+    [[, messageListener]] = mockedAddEventListener.mock.calls.filter(
+      (call) => call[0] === "message"
+    );
+  });
+  test("call setInterVal with the correct args", () => {
+    const {
+      result: {
+        current: { onLoad },
+      },
+    } = hook;
+    onLoad();
+    expect(setIntervalListener.mock.calls[0][1]).toBe(DEFAULT_DELAY);
+  });
+  test("should set status properly when succeed to hand shake for over count times", () => {
+    const {
+      result: {
+        current: { onLoad },
+      },
+    } = hook;
+    onLoad();
+    const intervalCallback = setIntervalListener.mock.calls[0][0];
+    expect(clearIntervalListener.mock.calls).toEqual([]);
+    expect(mockedPostMessage.mock.calls).toEqual([]);
+    const data = {
+      child: true,
+      __init__: true,
+    };
+    act(() => {
+      messageListener(
+        new MessageEvent("message", {
+          origin: childDomain,
+          data,
+        })
+      );
+      intervalCallback();
+    });
+    expect(hook.result.current.status).toBe(IFrameStatus.LOADED);
     expect(clearIntervalListener.mock.calls).toEqual([[5]]);
   });
 });
