@@ -8,22 +8,26 @@ export enum IFrameStatus {
 
 export type Listener = (data: any) => void;
 
+export interface ParentProp {
+  childDomain: string;
+  delay?: number;
+  count?: number;
+  listen?: Listener;
+}
+
+export interface ParentResult {
+  status: IFrameStatus;
+  send: (data: any) => void;
+  onLoad: () => void;
+  ref: Ref<HTMLIFrameElement>;
+}
+
 export const useIFrameParent = ({
   delay = 500,
   childDomain,
   listen,
   count: initialCount = 10,
-}: {
-  delay?: number;
-  childDomain: string;
-  listen?: Listener;
-  count?: number;
-}): {
-  status: IFrameStatus;
-  onLoad: () => void;
-  ref: Ref<HTMLIFrameElement>;
-  send: (data: any) => void;
-} => {
+}: ParentProp): ParentResult => {
   const ref = useRef<HTMLIFrameElement>(null);
   const [status, setStatus] = useState(IFrameStatus.LOADING);
   const timerId = useRef(0);
