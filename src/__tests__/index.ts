@@ -269,3 +269,127 @@ describe("useIframeParent should mark status as LOADED when succeed to hand shak
     expect(clearIntervalListener.mock.calls).toEqual([[5]]);
   });
 });
+
+describe("useIframeParent should work properly when communicating with the child", () => {
+  const listen = jest.fn();
+  const childDomain = "http://www.childDomain.com";
+  const mockedPostMessage = jest.fn();
+  let setIntervalListener: jest.Mock;
+  let clearIntervalListener: jest.Mock;
+  let hook: RenderHookResult<ParentProp, ParentResult>;
+  let messageListener: EventListener;
+  let removeEventListener: jest.Mock;
+  beforeAll(() => {
+    global.clearInterval = jest.fn();
+    global.setInterval = jest.fn().mockReturnValue(5);
+    global.removeEventListener = jest.fn();
+    global.addEventListener = jest.fn();
+    global.parent.postMessage = jest.fn();
+    // eslint-disable-next-line
+    // @ts-ignore
+    jest.spyOn(React, "useRef").mockImplementation((initialVal) =>
+      initialVal === null
+        ? {
+            current: { contentWindow: { postMessage: mockedPostMessage } },
+          }
+        : realUseRef("react")
+    );
+    const mockedAddEventListener = global.addEventListener as jest.Mock;
+    setIntervalListener = global.setInterval as jest.Mock;
+    clearIntervalListener = global.clearInterval as jest.Mock;
+    removeEventListener = global.removeEventListener as jest.Mock;
+    hook = renderHook(() =>
+      useIFrameParent({
+        listen,
+        childDomain,
+      })
+    );
+    [[, messageListener]] = mockedAddEventListener.mock.calls.filter(
+      (call) => call[0] === "message"
+    );
+  });
+  test("should hand shake properly with the child", () => {
+    const {
+      result: {
+        current: { onLoad },
+      },
+    } = hook;
+    onLoad();
+    expect(setIntervalListener.mock.calls[0][1]).toBe(DEFAULT_DELAY);
+    onLoad();
+    const intervalCallback = setIntervalListener.mock.calls[0][0];
+    expect(clearIntervalListener.mock.calls).toEqual([]);
+    expect(mockedPostMessage.mock.calls).toEqual([]);
+    const data = {
+      child: true,
+      __init__: true,
+    };
+    act(() => {
+      messageListener(
+        new MessageEvent("message", {
+          origin: childDomain,
+          data,
+        })
+      );
+      intervalCallback();
+    });
+    expect(hook.result.current.status).toBe(IFrameStatus.LOADED);
+    expect(clearIntervalListener.mock.calls).toEqual([[5]]);
+  });
+
+  test("should invoke the listen callback properly when receiving a non-init message", () => {
+    const data = {
+      child: true,
+      data: "data strings",
+    };
+    act(() =>
+      messageListener(
+        new MessageEvent("message", {
+          origin: childDomain,
+          data,
+        })
+      )
+    );
+    expect(mockedPostMessage.mock.calls).toEqual([]);
+    expect(listen.mock.calls).toEqual([["data strings"]]);
+  });
+  test("should do nothing when receiving a message not from the child", () => {
+    const data = {
+      parent: true,
+      data: "data strings",
+    };
+    act(() =>
+      messageListener(
+        new MessageEvent("message", {
+          origin: "fake domain",
+          data,
+        })
+      )
+    );
+    expect(mockedPostMessage.mock.calls).toEqual([]);
+    expect(listen.mock.calls).toEqual([]);
+  });
+
+  test("should send message to child properly", () => {
+    const data = "data string";
+    hook.result.current.send(data);
+    expect(mockedPostMessage.mock.calls).toEqual([
+      [{ parent: true, data }, childDomain],
+    ]);
+  });
+  test("should unregister event listener properly", () => {
+    expect(
+      removeEventListener.mock.calls.filter(([type]) => type === "message")
+    ).toEqual([]);
+    act(() => {
+      hook.unmount();
+    });
+    expect(
+      removeEventListener.mock.calls.filter(([type]) => type === "message")
+    ).toEqual([["message", messageListener]]);
+  });
+  afterEach(() => {
+    mockedPostMessage.mockReset();
+    listen.mockReset();
+  });
+});
